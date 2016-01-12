@@ -39,8 +39,9 @@ type networkInterface struct {
 }
 
 type hardDisk struct {
-	size int64
-	iops int64
+	size     int64
+	iops     int64
+	initType string
 }
 
 type virtualMachine struct {
@@ -263,6 +264,21 @@ func resourceVSphereVirtualMachine() *schema.Resource {
 							},
 						},
 
+						"type": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+							Default:  "eager_zeroed",
+							ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+								value := v.(string)
+								if value != "thin" && value != "eager_zeroed" {
+									errors = append(errors, fmt.Errorf(
+										"only 'thin' and 'eager_zeroed' are supported values for 'type'"))
+								}
+								return
+							},
+						},
+
 						"datastore": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
@@ -429,6 +445,9 @@ func resourceVSphereVirtualMachineCreate(d *schema.ResourceData, meta interface{
 			}
 			if v, ok := disk["iops"].(int); ok && v != 0 {
 				disks[i].iops = int64(v)
+			}
+			if v, ok := disk["type"].(string); ok && v != "" {
+				disks[i].initType = v
 			}
 		}
 		vm.hardDisks = disks
@@ -723,7 +742,7 @@ func buildNetworkDevice(f *find.Finder, label, adapterType string) (*types.Virtu
 }
 
 // buildVMRelocateSpec builds VirtualMachineRelocateSpec to set a place for a new VirtualMachine.
-func buildVMRelocateSpec(finder *find.Finder, rp *object.ResourcePool, ds *object.Datastore, vm *object.VirtualMachine, linked bool) (types.VirtualMachineRelocateSpec, error) {
+func buildVMRelocateSpec(finder *find.Finder, rp *object.ResourcePool, ds *object.Datastore, vm *object.VirtualMachine, initType string, linked bool) (types.VirtualMachineRelocateSpec, error) {
 	var key int
 	var parent *types.VirtualDiskFlatVer2BackingInfo
 
@@ -759,6 +778,7 @@ func buildVMRelocateSpec(finder *find.Finder, rp *object.ResourcePool, ds *objec
 	} else {
 		dsr := ds.Reference()
 
+		isThin := initType == "thin"
 		relocateSpec = types.VirtualMachineRelocateSpec{
 			Datastore: &dsr,
 			Pool:      &rpr,
@@ -768,8 +788,8 @@ func buildVMRelocateSpec(finder *find.Finder, rp *object.ResourcePool, ds *objec
 					DiskId:    key,
 					DiskBackingInfo: &types.VirtualDiskFlatVer2BackingInfo{
 						DiskMode:        "persistent",
-						ThinProvisioned: types.NewBool(false),
-						EagerlyScrub:    types.NewBool(true),
+						ThinProvisioned: types.NewBool(isThin),
+						EagerlyScrub:    types.NewBool(!isThin),
 					},
 				},
 			},
@@ -1137,7 +1157,7 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 	}
 	log.Printf("[DEBUG] datastore: %#v", datastore)
 
-	relocateSpec, err := buildVMRelocateSpec(finder, resourcePool, datastore, template, vm.template.linked)
+	relocateSpec, err := buildVMRelocateSpec(finder, resourcePool, datastore, template, vm.hardDisks[0].initType, vm.template.linked)
 	if err != nil {
 		return err
 	}
@@ -1325,7 +1345,7 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 	log.Printf("[DEBUG]VM customization finished")
 
 	for i := 1; i < len(vm.hardDisks); i++ {
-		err = addHardDisk(newVM, vm.hardDisks[i].size, vm.hardDisks[i].iops, "eager_zeroed")
+		err = addHardDisk(newVM, vm.hardDisks[i].size, vm.hardDisks[i].iops, vm.hardDisks[i].initType)
 		if err != nil {
 			return err
 		}
