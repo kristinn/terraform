@@ -495,7 +495,9 @@ func TestAccVSphereVirtualMachine_linkedCurrentSnapshotWithExtraDisk(t *testing.
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.linked_current_snapshot_with_extra_disk", "disk.0.template.linked", "1"),
 					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot_with_extra_disk", "disk.1.size", "1"),
+						"vsphere_virtual_machine.linked_current_snapshot_with_extra_disk", "disk.1.size", "30"),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.linked_current_snapshot_with_extra_disk", "disk.1.type", "thin"),
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.linked_current_snapshot_with_extra_disk", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -847,7 +849,8 @@ resource "vsphere_virtual_machine" "linked_current_snapshot_with_extra_disk" {
     }
     disk {
 %s
-		size = 1
+		size = 30
+		type = "thin"
     }
 }
 `
