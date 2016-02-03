@@ -34,9 +34,9 @@ func TestAccVSphereVirtualMachine_basic(t *testing.T) {
 		datastoreOpt = fmt.Sprintf("        datastore = \"%s\"\n", v)
 	}
 	template := os.Getenv("VSPHERE_TEMPLATE")
-	gateway := os.Getenv("VSPHERE_NETWORK_GATEWAY")
+	gateway := os.Getenv("VSPHERE_IPV4_GATEWAY")
 	label := os.Getenv("VSPHERE_NETWORK_LABEL")
-	ip_address := os.Getenv("VSPHERE_NETWORK_IP_ADDRESS")
+	ip_address := os.Getenv("VSPHERE_IPV4_ADDRESS")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -325,64 +325,6 @@ func TestAccVSphereVirtualMachine_createWithFolder(t *testing.T) {
 	})
 }
 
-// TestAccVSphereVirtualMachine_linkedCurrentSnapshot tests if it works to create a linked clone from a current snapshot.
-func TestAccVSphereVirtualMachine_linkedCurrentSnapshot(t *testing.T) {
-	var vm virtualMachine
-	var locationOpt string
-	var datastoreOpt string
-
-	if v := os.Getenv("VSPHERE_DATACENTER"); v != "" {
-		locationOpt += fmt.Sprintf("    datacenter = \"%s\"\n", v)
-	}
-	if v := os.Getenv("VSPHERE_CLUSTER"); v != "" {
-		locationOpt += fmt.Sprintf("    cluster = \"%s\"\n", v)
-	}
-	if v := os.Getenv("VSPHERE_RESOURCE_POOL"); v != "" {
-		locationOpt += fmt.Sprintf("    resource_pool = \"%s\"\n", v)
-	}
-	if v := os.Getenv("VSPHERE_DATASTORE"); v != "" {
-		datastoreOpt = fmt.Sprintf("        datastore = \"%s\"\n", v)
-	}
-	template := os.Getenv("VSPHERE_TEMPLATE")
-	label := os.Getenv("VSPHERE_NETWORK_LABEL_DHCP")
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckVSphereVirtualMachineDestroy,
-		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config: fmt.Sprintf(
-					testAccCheckVSphereVirtualMachineConfig_linkedCurrentSnapshot,
-					locationOpt,
-					label,
-					datastoreOpt,
-					template,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckVSphereVirtualMachineExists("vsphere_virtual_machine.linked_current_snapshot", &vm),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "name", "terraform-test-linked-current-snapshot"),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "vcpu", "2"),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "memory", "4096"),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "disk.#", "1"),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "disk.0.template.label", template),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "disk.0.template.linked", "1"),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "network_interface.#", "1"),
-					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.linked_current_snapshot", "network_interface.0.label", label),
-				),
-			},
-		},
-	})
-}
-
 // TestAccVSphereVirtualMachine_linkedNamedSnapshot tests if it works to create a linked clone from a named snapshot.
 func TestAccVSphereVirtualMachine_linkedNamedSnapshot(t *testing.T) {
 	var vm virtualMachine
@@ -502,6 +444,31 @@ func TestAccVSphereVirtualMachine_linkedCurrentSnapshotWithExtraDisk(t *testing.
 						"vsphere_virtual_machine.linked_current_snapshot_with_extra_disk", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.linked_current_snapshot_with_extra_disk", "network_interface.0.label", label),
+=======
+					testAccCheckVSphereVirtualMachineExists("vsphere_virtual_machine.ipv4ipv6", &vm),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "name", "terraform-test-ipv4-ipv6"),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "vcpu", "2"),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "memory", "4096"),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "disk.#", "2"),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "disk.0.template", template),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "network_interface.#", "1"),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "network_interface.0.label", label),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "network_interface.0.ipv4_address", ipv4Address),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "network_interface.0.ipv4_gateway", ipv4Gateway),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "network_interface.0.ipv6_address", ipv6Address),
+					resource.TestCheckResourceAttr(
+						"vsphere_virtual_machine.ipv4ipv6", "network_interface.0.ipv6_gateway", ipv6Gateway),
+>>>>>>> provider/vsphere: IPv6 support.
 				),
 			},
 		},
@@ -851,6 +818,33 @@ resource "vsphere_virtual_machine" "linked_current_snapshot_with_extra_disk" {
 %s
 		size = 30
 		type = "thin"
+    }
+}
+`
+
+const testAccCheckVSphereVirtualMachineConfig_ipv4Andipv6 = `
+resource "vsphere_virtual_machine" "ipv4ipv6" {
+    name = "terraform-test-ipv4-ipv6"
+%s
+    vcpu = 2
+    memory = 4096
+    network_interface {
+        label = "%s"
+        ipv4_address = "%s"
+        ipv4_prefix_length = 24
+        ipv4_gateway = "%s"
+        ipv6_address = "%s"
+        ipv6_prefix_length = 64
+        ipv6_gateway = "%s"
+    }
+    disk {
+%s
+        template = "%s"
+        iops = 500
+    }
+    disk {
+        size = 1
+        iops = 500
     }
 }
 `
