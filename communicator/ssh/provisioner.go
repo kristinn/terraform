@@ -165,7 +165,11 @@ func prepareSSHConfig(connInfo *connectionInfo) (*sshConfig, error) {
 		}
 	}
 
-	host := fmt.Sprintf("%s:%d", connInfo.Host, connInfo.Port)
+	connHost := connInfo.Host
+	if net.ParseIP(connInfo.Host).To4() == nil {
+		connHost = fmt.Sprintf("[%s]", connInfo.Host)
+	}
+	host := fmt.Sprintf("%s:%d", connHost, connInfo.Port)
 	connectFunc := ConnectFunc("tcp", host)
 
 	if bastionConf != nil {
