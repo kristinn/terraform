@@ -64,7 +64,7 @@ func TestAccVSphereVirtualMachine_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.foo", "disk.#", "2"),
 					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.foo", "disk.0.template.label", template),
+						"vsphere_virtual_machine.foo", "disk.0.clone.label", template),
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.foo", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -119,7 +119,7 @@ func TestAccVSphereVirtualMachine_dhcp(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.bar", "disk.#", "1"),
 					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.bar", "disk.0.template.label", template),
+						"vsphere_virtual_machine.bar", "disk.0.clone.label", template),
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.bar", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -174,7 +174,7 @@ func TestAccVSphereVirtualMachine_custom_configs(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.car", "disk.#", "1"),
 					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.car", "disk.0.template.label", template),
+						"vsphere_virtual_machine.car", "disk.0.clone.label", template),
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.car", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -246,7 +246,7 @@ func TestAccVSphereVirtualMachine_createInExistingFolder(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.folder", "disk.#", "1"),
 					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.folder", "disk.0.template.label", template),
+						"vsphere_virtual_machine.folder", "disk.0.clone.label", template),
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.folder", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -314,7 +314,7 @@ func TestAccVSphereVirtualMachine_createWithFolder(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.with_folder", "disk.#", "1"),
 					resource.TestCheckResourceAttr(
-						"vsphere_virtual_machine.with_folder", "disk.0.template.label", template),
+						"vsphere_virtual_machine.with_folder", "disk.0.clone.label", template),
 					resource.TestCheckResourceAttr(
 						"vsphere_virtual_machine.with_folder", "network_interface.#", "1"),
 					resource.TestCheckResourceAttr(
@@ -512,7 +512,7 @@ resource "vsphere_virtual_machine" "foo" {
     }
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         }
         iops = 500
@@ -534,7 +534,7 @@ resource "vsphere_virtual_machine" "bar" {
     }
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         }
     }
@@ -557,7 +557,7 @@ resource "vsphere_virtual_machine" "car" {
     }
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         }
     }
@@ -576,7 +576,7 @@ resource "vsphere_virtual_machine" "folder" {
     }
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         }
     }
@@ -599,7 +599,7 @@ resource "vsphere_virtual_machine" "with_folder" {
     }
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         }
     }
@@ -618,7 +618,7 @@ resource "vsphere_virtual_machine" "linked_current_snapshot" {
 
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         	linked = true
         }
@@ -638,7 +638,7 @@ resource "vsphere_virtual_machine" "linked_named_snapshot" {
 
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         	linked = true
         	snapshot = "%s"
@@ -659,7 +659,7 @@ resource "vsphere_virtual_machine" "linked_current_snapshot_with_extra_disk" {
 
     disk {
 %s
-        template {
+        clone {
         	label = "%s"
         	linked = true
         }
@@ -689,7 +689,7 @@ resource "vsphere_virtual_machine" "ipv4ipv6" {
     }
     disk {
 %s
-        template = "%s"
+        clone = "%s"
         iops = 500
     }
     disk {

@@ -16,8 +16,8 @@ func init() {
 	// We do the string concat below to avoid AWS autodetection of a key. This
 	// key is locked down an IAM policy that is read-only so we're purposely
 	// exposing it.
-	os.Setenv("AWS_ACCESS_KEY", "AKIAJCTNQ" + "IOBWAYXKGZA")
-	os.Setenv("AWS_SECRET_KEY", "jcQOTYdXNzU5MO" + "5ExqbE1U995dIfKCKQtiVobMvr")
+	os.Setenv("AWS_ACCESS_KEY", "AKIAJCTNQ"+"IOBWAYXKGZA")
+	os.Setenv("AWS_SECRET_KEY", "jcQOTYdXNzU5MO"+"5ExqbE1U995dIfKCKQtiVobMvr")
 }
 
 func TestS3Getter_impl(t *testing.T) {

@@ -629,7 +629,7 @@ content {
 func TestDecode_NestedNode(t *testing.T) {
 	// given
 	var value struct {
-		Nested  struct {
+		Nested struct {
 			Content ast.Node
 		}
 	}
@@ -661,4 +661,3 @@ nested "content" {
 		t.Errorf("expected mapping to be returned")
 	}
 }
-

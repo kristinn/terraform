@@ -179,7 +179,7 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
 		expected := map[string]interface{}{
-			"names":              []interface {}{"name1", "name2"},
+			"names":              []interface{}{"name1", "name2"},
 			"region":             "region",
 			"size":               "size",
 			"image":              float64(1),

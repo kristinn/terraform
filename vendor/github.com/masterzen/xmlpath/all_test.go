@@ -98,7 +98,10 @@ func (s *BasicSuite) TestLibraryTable(c *C) {
 type cerror string
 type exists bool
 
-var libraryTable = []struct{ path string; result interface{} }{
+var libraryTable = []struct {
+	path   string
+	result interface{}
+}{
 	// These are the examples in the package documentation:
 	{"/library/book/isbn", "0836217462"},
 	{"library/*/isbn", "0836217462"},
@@ -195,7 +198,6 @@ var libraryTable = []struct{ path string; result interface{} }{
 	{"//self::comment()", []string{" Great book. ", " Another great book. "}},
 	{`comment("")`, cerror(`.*: comment\(\) has no arguments`)},
 
-
 	// Processing instructions.
 	{`/library/book/author/processing-instruction()`, `"go rocks"`},
 	{`/library/book/author/processing-instruction("echo")`, `"go rocks"`},
@@ -217,7 +219,7 @@ var libraryTable = []struct{ path string; result interface{} }{
 }
 
 var libraryXml = []byte(
-`<?xml version="1.0"?> 
+	`<?xml version="1.0"?> 
 <library>
   <!-- Great book. -->
   <book id="b0836217462" available="true">
@@ -338,18 +340,21 @@ func (s *BasicSuite) TestNamespace(c *C) {
 
 var namespaceXml = []byte(`<s:Envelope xml:lang="en-US" xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:rsp="http://schemas.microsoft.com/wbem/wsman/1/windows/shell" xmlns:p="http://schemas.microsoft.com/wbem/wsman/1/wsman.xsd"><s:Header><a:Action>http://schemas.microsoft.com/wbem/wsman/1/windows/shell/ReceiveResponse</a:Action><a:MessageID>uuid:AAD46BD4-6315-4C3C-93D4-94A55773287D</a:MessageID><a:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:To><a:RelatesTo>uuid:18A52A06-9027-41DC-8850-3F244595AF62</a:RelatesTo></s:Header><s:Body><rsp:ReceiveResponse><rsp:Stream Name="stdout" CommandId="1A6DEE6B-EC68-4DD6-87E9-030C0048ECC4">VGhhdCdzIGFsbCBmb2xrcyEhIQ==</rsp:Stream><rsp:Stream Name="stderr" CommandId="1A6DEE6B-EC68-4DD6-87E9-030C0048ECC4">VGhpcyBpcyBzdGRlcnIsIEknbSBwcmV0dHkgc3VyZSE=</rsp:Stream><rsp:CommandState CommandId="1A6DEE6B-EC68-4DD6-87E9-030C0048ECC4" State="http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandState/Running"></rsp:CommandState></rsp:ReceiveResponse></s:Body></s:Envelope>`)
 
-var namespaces = []xmlpath.Namespace {
-	{ "a", "http://schemas.xmlsoap.org/ws/2004/08/addressing" },
-	{ "rsp", "http://schemas.microsoft.com/wbem/wsman/1/windows/shell" },
+var namespaces = []xmlpath.Namespace{
+	{"a", "http://schemas.xmlsoap.org/ws/2004/08/addressing"},
+	{"rsp", "http://schemas.microsoft.com/wbem/wsman/1/windows/shell"},
 }
 
-var namespaceTable = []struct{ path string; result interface{} }{
-	{ "//a:To", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous" },
-	{ "//rsp:Stream[@Name='stdout']", "VGhhdCdzIGFsbCBmb2xrcyEhIQ==" },
-	{ "//rsp:CommandState/@CommandId", "1A6DEE6B-EC68-4DD6-87E9-030C0048ECC4" },
-	{ "//*[@State='http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandState/Done']", exists(false) },
-	{ "//rsp:Stream", []string{ "VGhhdCdzIGFsbCBmb2xrcyEhIQ==", "VGhpcyBpcyBzdGRlcnIsIEknbSBwcmV0dHkgc3VyZSE=" }},
-	{ "//s:Header", cerror(`.*: unknown namespace prefix: s`) },
+var namespaceTable = []struct {
+	path   string
+	result interface{}
+}{
+	{"//a:To", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous"},
+	{"//rsp:Stream[@Name='stdout']", "VGhhdCdzIGFsbCBmb2xrcyEhIQ=="},
+	{"//rsp:CommandState/@CommandId", "1A6DEE6B-EC68-4DD6-87E9-030C0048ECC4"},
+	{"//*[@State='http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandState/Done']", exists(false)},
+	{"//rsp:Stream", []string{"VGhhdCdzIGFsbCBmb2xrcyEhIQ==", "VGhpcyBpcyBzdGRlcnIsIEknbSBwcmV0dHkgc3VyZSE="}},
+	{"//s:Header", cerror(`.*: unknown namespace prefix: s`)},
 }
 
 func (s *BasicSuite) BenchmarkParse(c *C) {
@@ -384,7 +389,9 @@ func (s *BasicSuite) BenchmarkSimplePathString(c *C) {
 
 func (s *BasicSuite) BenchmarkSimplePathStringUnmarshal(c *C) {
 	// For a vague comparison.
-	var result struct{ Str string `xml:"reservationSet>item>instancesSet>item>instanceType"` }
+	var result struct {
+		Str string `xml:"reservationSet>item>instancesSet>item>instanceType"`
+	}
 	for i := 0; i < c.N; i++ {
 		xml.Unmarshal(instancesXml, &result)
 	}
@@ -405,10 +412,8 @@ func (s *BasicSuite) BenchmarkSimplePathExists(c *C) {
 	c.Assert(exists, Equals, true)
 }
 
-
-
 var instancesXml = []byte(
-`<DescribeInstancesResponse xmlns="http://ec2.amazonaws.com/doc/2011-12-15/">
+	`<DescribeInstancesResponse xmlns="http://ec2.amazonaws.com/doc/2011-12-15/">
   <requestId>98e3c9a4-848c-4d6d-8e8a-b1bdEXAMPLE</requestId>
   <reservationSet>
     <item>

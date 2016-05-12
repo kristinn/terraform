@@ -3,9 +3,9 @@ package linereader
 import (
 	"bytes"
 	"io"
-	"time"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestReader(t *testing.T) {

@@ -55,7 +55,7 @@ type virtualMachine struct {
 	datastore            string
 	vcpu                 int
 	memoryMb             int64
-	template             *virtualMachineTemplate
+	clone                *virtualMachineClone
 	networkInterfaces    []networkInterface
 	hardDisks            []hardDisk
 	domain               string
@@ -65,8 +65,8 @@ type virtualMachine struct {
 	customConfigurations map[string](types.AnyType)
 }
 
-// virtualMachineTemplate stores information about the template to use for cloning, and if it should be a linked clone or not.
-type virtualMachineTemplate struct {
+// virtualMachineClone stores information about the clone to use for cloning, and if it should be a linked clone or not.
+type virtualMachineClone struct {
 	label    string
 	linked   bool
 	snapshot string
@@ -251,7 +251,7 @@ func resourceVSphereVirtualMachine() *schema.Resource {
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"template": &schema.Schema{
+						"clone": &schema.Schema{
 							Type:     schema.TypeMap,
 							Optional: true,
 							ForceNew: true,
@@ -431,9 +431,9 @@ func resourceVSphereVirtualMachineCreate(d *schema.ResourceData, meta interface{
 		for i, v := range vL.([]interface{}) {
 			disk := v.(map[string]interface{})
 			if i == 0 {
-				if _, ok := disk["template"]; ok {
-					t := disk["template"].(map[string]interface{})
-					vm.template = &virtualMachineTemplate{
+				if _, ok := disk["clone"]; ok {
+					t := disk["clone"].(map[string]interface{})
+					vm.clone = &virtualMachineClone{
 						label:  t["label"].(string),
 						linked: false,
 					}
@@ -444,17 +444,17 @@ func resourceVSphereVirtualMachineCreate(d *schema.ResourceData, meta interface{
 							return fmt.Errorf("Error when converting string to bool: %s", err)
 						}
 
-						vm.template.linked = linked
+						vm.clone.linked = linked
 					}
 
 					if snapshot, ok := t["snapshot"].(string); ok && snapshot != "" {
-						vm.template.snapshot = snapshot
+						vm.clone.snapshot = snapshot
 					}
 				} else {
 					if v, ok := disk["size"].(int); ok && v != 0 {
 						disks[i].size = int64(v)
 					} else {
-						return fmt.Errorf("If template argument is not specified, size argument is required.")
+						return fmt.Errorf("If clone argument is not specified, size argument is required.")
 					}
 				}
 				if v, ok := disk["datastore"].(string); ok && v != "" {
@@ -478,7 +478,7 @@ func resourceVSphereVirtualMachineCreate(d *schema.ResourceData, meta interface{
 		log.Printf("[DEBUG] disk init: %v", disks)
 	}
 
-	if vm.template != nil {
+	if vm.clone != nil {
 		err := vm.deployVirtualMachine(client)
 		if err != nil {
 			return err
@@ -1103,11 +1103,11 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 	finder := find.NewFinder(c.Client, true)
 	finder = finder.SetDatacenter(dc)
 
-	template, err := finder.VirtualMachine(context.TODO(), vm.template.label)
+	clone, err := finder.VirtualMachine(context.TODO(), vm.clone.label)
 	if err != nil {
 		return err
 	}
-	log.Printf("[DEBUG] template: %#v", template)
+	log.Printf("[DEBUG] clone: %#v", clone)
 
 	var resourcePool *object.ResourcePool
 	if vm.resourcePool == "" {
@@ -1169,7 +1169,7 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 				sp := object.StoragePod{
 					object.NewFolder(c.Client, d),
 				}
-				sps := buildStoragePlacementSpecClone(c, dcFolders, template, resourcePool, sp)
+				sps := buildStoragePlacementSpecClone(c, dcFolders, clone, resourcePool, sp)
 				datastore, err = findDatastore(c, sps)
 				if err != nil {
 					return err
@@ -1181,7 +1181,7 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 	}
 	log.Printf("[DEBUG] datastore: %#v", datastore)
 
-	relocateSpec, err := buildVMRelocateSpec(finder, resourcePool, datastore, template, vm.hardDisks[0].initType, vm.template.linked)
+	relocateSpec, err := buildVMRelocateSpec(finder, resourcePool, datastore, clone, vm.hardDisks[0].initType, vm.clone.linked)
 	if err != nil {
 		return err
 	}
@@ -1302,11 +1302,11 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 	}
 
 	// We need to supply a snapshot if it's a linked clone.
-	if vm.template.linked {
+	if vm.clone.linked {
 		var mvm mo.VirtualMachine
 
 		collector := property.DefaultCollector(c.Client)
-		if err := collector.RetrieveOne(context.TODO(), template.Reference(), []string{"snapshot"}, &mvm); err != nil {
+		if err := collector.RetrieveOne(context.TODO(), clone.Reference(), []string{"snapshot"}, &mvm); err != nil {
 			return err
 		}
 
@@ -1314,25 +1314,25 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 			return errors.New("The source of the linked clone must have at least one existing snapshot")
 		}
 
-		if vm.template.snapshot == "" {
+		if vm.clone.snapshot == "" {
 			cloneSpec.Snapshot = mvm.Snapshot.CurrentSnapshot
 		} else {
 			// Search for the requested snapshot. Error out if we can't find it.
 			for _, s := range mvm.Snapshot.RootSnapshotList {
-				if s.Name == vm.template.snapshot {
+				if s.Name == vm.clone.snapshot {
 					cloneSpec.Snapshot = &s.Snapshot
 				}
 			}
 
 			if cloneSpec.Snapshot == nil {
-				return errors.New(fmt.Sprintf("No snapshot found with the name %s", vm.template.snapshot))
+				return errors.New(fmt.Sprintf("No snapshot found with the name %s", vm.clone.snapshot))
 			}
 		}
 	}
 
 	log.Printf("[DEBUG] clone spec: %v", cloneSpec)
 
-	task, err := template.Clone(context.TODO(), folder, vm.name, cloneSpec)
+	task, err := clone.Clone(context.TODO(), folder, vm.name, cloneSpec)
 	if err != nil {
 		return err
 	}
@@ -1350,7 +1350,7 @@ func (vm *virtualMachine) deployVirtualMachine(c *govmomi.Client) error {
 
 	devices, err := newVM.Device(context.TODO())
 	if err != nil {
-		log.Printf("[DEBUG] Template devices can't be found")
+		log.Printf("[DEBUG] Clone devices can't be found")
 		return err
 	}
 

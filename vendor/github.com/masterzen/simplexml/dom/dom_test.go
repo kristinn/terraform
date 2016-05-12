@@ -37,7 +37,7 @@ func (s *DomSuite) TestMoreNodes(c *C) {
 	node2 := CreateElement("node2")
 	root.AddChild(node2)
 	doc.SetRoot(root)
-	
+
 	expected := `<?xml version="1.0" encoding="utf-8" ?>
 <root>
   <node1>
@@ -46,7 +46,7 @@ func (s *DomSuite) TestMoreNodes(c *C) {
   <node2/>
 </root>
 `
-	
+
 	c.Assert(doc.String(), Equals, expected)
 }
 
@@ -58,7 +58,7 @@ func (s *DomSuite) TestAttributes(c *C) {
 	node1.SetAttr("attr1", "pouet")
 	root.AddChild(node1)
 	doc.SetRoot(root)
-	
+
 	expected := `<?xml version="1.0" encoding="utf-8" ?>
 <root>
   <node1 attr1="pouet"/>
@@ -75,7 +75,7 @@ func (s *DomSuite) TestContent(c *C) {
 	node1.SetContent("this is a text content")
 	root.AddChild(node1)
 	doc.SetRoot(root)
-	
+
 	expected := `<?xml version="1.0" encoding="utf-8" ?>
 <root>
   <node1>this is a text content</node1>
@@ -88,13 +88,13 @@ func (s *DomSuite) TestNamespace(c *C) {
 	doc := CreateDocument()
 	doc.PrettyPrint = true
 	root := CreateElement("root")
-	root.DeclareNamespace(Namespace { Prefix: "a", Uri: "http://schemas.xmlsoap.org/ws/2004/08/addressing"})
+	root.DeclareNamespace(Namespace{Prefix: "a", Uri: "http://schemas.xmlsoap.org/ws/2004/08/addressing"})
 	node1 := CreateElement("node1")
 	root.AddChild(node1)
 	node1.SetNamespace("a", "http://schemas.xmlsoap.org/ws/2004/08/addressing")
 	node1.SetContent("this is a text content")
 	doc.SetRoot(root)
-	
+
 	expected := `<?xml version="1.0" encoding="utf-8" ?>
 <root xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing">
   <a:node1>this is a text content</a:node1>
@@ -102,4 +102,3 @@ func (s *DomSuite) TestNamespace(c *C) {
 `
 	c.Assert(doc.String(), Equals, expected)
 }
-

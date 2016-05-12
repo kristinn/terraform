@@ -11,7 +11,7 @@ func TestUnmarshalJobDetail(t *testing.T) {
 			"with-config",
 			`<job><uuid>baz</uuid><dispatch><rankOrder>ascending</rankOrder></dispatch></job>`,
 			&JobDetail{},
-			func (rv interface {}) error {
+			func(rv interface{}) error {
 				v := rv.(*JobDetail)
 				if v.ID != "baz" {
 					return fmt.Errorf("got ID %s, but expecting baz", v.ID)
@@ -26,7 +26,7 @@ func TestUnmarshalJobDetail(t *testing.T) {
 			"with-empty-config",
 			`<JobPlugin type="foo-plugin"><configuration/></JobPlugin>`,
 			&JobPlugin{},
-			func (rv interface {}) error {
+			func(rv interface{}) error {
 				v := rv.(*JobPlugin)
 				if v.Type != "foo-plugin" {
 					return fmt.Errorf("got Type %s, but expecting foo-plugin", v.Type)
@@ -56,7 +56,7 @@ func TestMarshalJobPlugin(t *testing.T) {
 		marshalTest{
 			"with-empty-config",
 			JobPlugin{
-				Type: "foo-plugin",
+				Type:   "foo-plugin",
 				Config: map[string]string{},
 			},
 			`<JobPlugin type="foo-plugin"></JobPlugin>`,
@@ -77,7 +77,7 @@ func TestUnmarshalJobPlugin(t *testing.T) {
 			"with-config",
 			`<JobPlugin type="foo-plugin"><configuration><entry key="woo" value="foo"/><entry key="bar" value="baz"/></configuration></JobPlugin>`,
 			&JobPlugin{},
-			func (rv interface {}) error {
+			func(rv interface{}) error {
 				v := rv.(*JobPlugin)
 				if v.Type != "foo-plugin" {
 					return fmt.Errorf("got Type %s, but expecting foo-plugin", v.Type)
@@ -98,7 +98,7 @@ func TestUnmarshalJobPlugin(t *testing.T) {
 			"with-empty-config",
 			`<JobPlugin type="foo-plugin"><configuration/></JobPlugin>`,
 			&JobPlugin{},
-			func (rv interface {}) error {
+			func(rv interface{}) error {
 				v := rv.(*JobPlugin)
 				if v.Type != "foo-plugin" {
 					return fmt.Errorf("got Type %s, but expecting foo-plugin", v.Type)

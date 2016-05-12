@@ -3,13 +3,13 @@ package chef
 import (
 	"encoding/json"
 	"fmt"
+	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"reflect"
 	"testing"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
